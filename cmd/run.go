@@ -10,6 +10,7 @@ import (
 )
 
 func init() {
+	runCmd.Flags().Uint32P("delay", "d", 2000, "Delay in milliseconds between requests to Wikipedia")
 	rootCmd.AddCommand(runCmd)
 }
 

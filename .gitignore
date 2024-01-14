@@ -17,9 +17,8 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# The output of extracted wikipedia articles
+output/
+
 # Go workspace file
-<<<<<<< HEAD
 go.work
-=======
-go.work
->>>>>>> master
