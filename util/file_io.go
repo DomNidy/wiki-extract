@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -69,6 +70,21 @@ func WriteWikipediaRawText(filename string, text string) {
 	}
 
 	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_raw.txt", filename)), []byte(text), 0644); err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+}
+
+func WriteWikipediaParsedText(filename string, text []string) {
+	outputDir := viper.GetString("outputDir")
+	text = []string{strings.Join(text, "\n")}
+
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		fmt.Println("Error creating output directory:", err)
+		return
+	}
+
+	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_parsed.txt", filename)), []byte(text[0]), 0644); err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
 	}

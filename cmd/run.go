@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"path"
 	"strings"
+	"time"
 	"wiki-extract/util"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func init() {
@@ -30,6 +32,7 @@ var runCmd = &cobra.Command{
 			return
 		}
 
+		queryDelay := viper.GetUint32("delay")
 		for i, url := range urls {
 			fmt.Print("Extracting text from URL ", i, " - ", url, "\n")
 			wikipediaPageRawText := util.RequestURL(url)
@@ -39,8 +42,15 @@ var runCmd = &cobra.Command{
 			filename = strings.ReplaceAll(filename, "/", "_")
 			filename = strings.ReplaceAll(filename, ".", "_")
 
-			util.WriteWikipediaRawText(filename, wikipediaPageRawText)
+			// Parse text from the html
+			parsedText := util.ParseTextFromHTML(wikipediaPageRawText)
 
+			// Write the raw html to file
+			util.WriteWikipediaRawText(filename, wikipediaPageRawText)
+			// Write the parsed text to file
+			util.WriteWikipediaParsedText(filename, parsedText)
+
+			time.Sleep(time.Millisecond * time.Duration(queryDelay))
 		}
 	},
 }

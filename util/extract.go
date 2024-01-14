@@ -2,6 +2,7 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -15,6 +16,8 @@ func RequestURL(url string) string {
 	}
 
 	defer resp.Body.Close()
+
+	fmt.Println("Response status:", resp.Status, "for URL:", url)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

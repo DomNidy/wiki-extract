@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // Try to split the url by spaces, if it fails then it is a single url
@@ -37,4 +39,27 @@ func ParseURLS(args []string) []string {
 	}
 
 	return urls
+}
+
+// Parse text from raw html
+func ParseTextFromHTML(html string) []string {
+	reader := strings.NewReader(html)
+	doc, err := goquery.NewDocumentFromReader(reader)
+
+	if err != nil {
+		fmt.Println("Error parsing html:", err)
+		panic(err)
+	}
+
+	var parsedText []string = []string{}
+
+	doc.Find("p").Each(func(i int, s *goquery.Selection) {
+		parsedText = append(parsedText, s.Text())
+	})
+
+	doc.Find("span").Each(func(i int, s *goquery.Selection) {
+		parsedText = append(parsedText, s.Text())
+	})
+
+	return parsedText
 }
