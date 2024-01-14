@@ -89,3 +89,18 @@ func WriteWikipediaParsedText(filename string, text []string) {
 		return
 	}
 }
+
+func WriteWikipediaRelatedLinks(filename string, links []string) {
+	outputDir := viper.GetString("outputDir")
+	links = []string{strings.Join(links, "\n")}
+
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		fmt.Println("Error creating output directory:", err)
+		return
+	}
+
+	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_related.txt", filename)), []byte(links[0]), 0644); err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+}

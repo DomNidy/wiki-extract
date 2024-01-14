@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"path"
 	"regexp"
 	"strings"
 
@@ -54,12 +55,47 @@ func ParseTextFromHTML(html string) []string {
 	var parsedText []string = []string{}
 
 	doc.Find("p").Each(func(i int, s *goquery.Selection) {
-		parsedText = append(parsedText, s.Text())
+		parsedText = append(parsedText, strings.TrimSpace(s.Text()))
 	})
 
 	doc.Find("span").Each(func(i int, s *goquery.Selection) {
-		parsedText = append(parsedText, s.Text())
+		parsedText = append(parsedText, strings.TrimSpace(s.Text()))
 	})
 
 	return parsedText
+}
+
+func ParseRelatedLinksFromHTML(html string, includeNonWikipediaLinks bool) []string {
+	reader := strings.NewReader(html)
+	doc, err := goquery.NewDocumentFromReader(reader)
+
+	if err != nil {
+		fmt.Println("Error parsing html:", err)
+		panic(err)
+	}
+
+	var relatedLinks []string = []string{}
+
+	doc.Find("a").Each(func(i int, s *goquery.Selection) {
+		// Read href attribute from link
+		href, exists := s.Attr("href")
+		if exists {
+			var url string
+			// Check if the link is a relative link
+			// We do this by checking if the link starts with a forward slash
+			// Or if the gets returned from the ParseURLS function
+			if strings.HasPrefix(href, "/") {
+				url = path.Join("https://en.wikipedia.org", href)
+			} else if len(ParseURLS([]string{href})) != 0 {
+				url = href
+			} else if !includeNonWikipediaLinks {
+				// If the link is not a relative link and we don't want to include non-wikipedia links, then we skip it
+				return
+			}
+
+			relatedLinks = append(relatedLinks, path.Join(url))
+		}
+	})
+
+	return relatedLinks
 }

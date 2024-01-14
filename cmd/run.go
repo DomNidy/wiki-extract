@@ -49,6 +49,8 @@ var runCmd = &cobra.Command{
 			util.WriteWikipediaRawText(filename, wikipediaPageRawText)
 			// Write the parsed text to file
 			util.WriteWikipediaParsedText(filename, parsedText)
+			// Find related links and write them to file
+			util.WriteWikipediaRelatedLinks(filename, util.ParseRelatedLinksFromHTML(wikipediaPageRawText, false))
 
 			time.Sleep(time.Millisecond * time.Duration(queryDelay))
 		}
