@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path"
 	"strings"
@@ -13,6 +14,8 @@ import (
 
 func init() {
 	runCmd.Flags().Uint32P("delay", "d", 2000, "Delay in milliseconds between requests to Wikipedia")
+	runCmd.Flags().Uint8P("cleanLevel", "c", 1, "An integer in the closed interval [0,3] that determines the cleaning 'strength' to use when parsing text")
+
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -21,6 +24,15 @@ var runCmd = &cobra.Command{
 	Aliases: []string{"extract"},
 	Short:   "Extract the text from the URLs in the extraction list",
 	Long:    "Extract the text from the URLs in the extraction list",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		// Ensure that the clean level is between 0 and 3
+		cleanLevel, err := cmd.Flags().GetUint8("cleanLevel")
+		if err != nil || cleanLevel > 3 {
+			return errors.New("cleanLevel must be between 0 and 3")
+		}
+
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("wiki-extract written by Dominic Nidy https://github.com/DomNidy")
 
@@ -32,7 +44,20 @@ var runCmd = &cobra.Command{
 			return
 		}
 
-		queryDelay := viper.GetUint32("delay")
+		cleanLevel, err := cmd.Flags().GetUint8("cleanLevel")
+		if err != nil {
+			fmt.Println("Error parsing clean level, defaulting to 1", err)
+			cleanLevel = 1
+		}
+
+		// Override the delay in config file if the user has passed a delay flag
+		queryDelay, err := cmd.Flags().GetUint32("delay")
+		if err != nil {
+			queryDelay = viper.GetUint32("delay")
+		}
+
+		fmt.Println("Running with clean level", cleanLevel)
+
 		for i, url := range urls {
 			fmt.Print("Extracting text from URL ", i, " - ", url, "\n")
 			wikipediaPageRawText := util.RequestURL(url)
@@ -43,14 +68,18 @@ var runCmd = &cobra.Command{
 			filename = strings.ReplaceAll(filename, ".", "_")
 
 			// Parse text from the html
-			parsedText := util.ParseTextFromHTML(wikipediaPageRawText)
+			contentfulText := util.ParseContentfulTextFromHTML(wikipediaPageRawText)
+			relatedLinks := util.ParseRelatedLinksFromHTML(wikipediaPageRawText, false)
+			articleDictionary := util.CreateArticleDictionaryFromContentfulText(contentfulText, int(cleanLevel))
 
 			// Write the raw html to file
-			util.WriteWikipediaRawText(filename, wikipediaPageRawText)
+			util.WriteWikipediaRawHTML(filename, wikipediaPageRawText)
 			// Write the parsed text to file
-			util.WriteWikipediaParsedText(filename, parsedText)
+			util.WriteWikipediaContentfulText(filename, contentfulText)
 			// Find related links and write them to file
-			util.WriteWikipediaRelatedLinks(filename, util.ParseRelatedLinksFromHTML(wikipediaPageRawText, false))
+			util.WriteWikipediaRelatedLinks(filename, relatedLinks)
+			// Write article dictionary to file
+			util.WriteArticleDictionary(filename, articleDictionary)
 
 			time.Sleep(time.Millisecond * time.Duration(queryDelay))
 		}

@@ -12,6 +12,7 @@ import (
 
 // Add urls to the extraction list json file
 // Returns the amount of new urls that were added
+// This function will automatically remove duplicates from the passed urls array, also removes them from the file
 func WriteURLExtractionList(urls []string) int {
 	var urlFilePath string = viper.GetString("urlFilePath")
 
@@ -22,7 +23,7 @@ func WriteURLExtractionList(urls []string) int {
 	urls = append(existingUrls, urls...)
 
 	// Remove duplicate urls from the list
-	urls = RemoveDuplicates(urls)
+	urls = RemoveDuplicateStringsFromArray(urls)
 
 	file, _ := json.MarshalIndent(urls, "", " ")
 	_ = os.WriteFile(urlFilePath, file, 0644)
@@ -45,11 +46,12 @@ func ClearURLExtractionList() {
 	_ = os.Remove(urlFilePath)
 }
 
-func RemoveDuplicates(urls []string) []string {
-	set := make(map[string]struct{}, len(urls))
+// Removes duplicate strings from an array
+func RemoveDuplicateStringsFromArray(array []string) []string {
+	set := make(map[string]struct{}, len(array))
 
-	for url := range urls {
-		set[urls[url]] = struct{}{}
+	for url := range array {
+		set[array[url]] = struct{}{}
 	}
 
 	uniqueUrls := make([]string, 0, len(set))
@@ -60,8 +62,8 @@ func RemoveDuplicates(urls []string) []string {
 	return uniqueUrls
 }
 
-// Write the raw text to from a wikipedia url to file
-func WriteWikipediaRawText(filename string, text string) {
+// Write the raw HTML of a wikipedia page to file
+func WriteWikipediaRawHTML(filename string, text string) {
 	outputDir := viper.GetString("outputDir")
 
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
@@ -69,13 +71,14 @@ func WriteWikipediaRawText(filename string, text string) {
 		return
 	}
 
-	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_raw.txt", filename)), []byte(text), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_raw.html", filename)), []byte(text), 0644); err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
 	}
 }
 
-func WriteWikipediaParsedText(filename string, text []string) {
+// Write contentful text to file
+func WriteWikipediaContentfulText(filename string, text []string) {
 	outputDir := viper.GetString("outputDir")
 	text = []string{strings.Join(text, "\n")}
 
@@ -84,12 +87,13 @@ func WriteWikipediaParsedText(filename string, text []string) {
 		return
 	}
 
-	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_parsed.txt", filename)), []byte(text[0]), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_contentful.txt", filename)), []byte(text[0]), 0644); err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
 	}
 }
 
+// Write the related links to file
 func WriteWikipediaRelatedLinks(filename string, links []string) {
 	outputDir := viper.GetString("outputDir")
 	links = []string{strings.Join(links, "\n")}
@@ -100,6 +104,22 @@ func WriteWikipediaRelatedLinks(filename string, links []string) {
 	}
 
 	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_related.txt", filename)), []byte(links[0]), 0644); err != nil {
+		fmt.Println("Error writing to file:", err)
+		return
+	}
+}
+
+// Write article dictionary to file
+func WriteArticleDictionary(filename string, dictionary map[string]int) {
+	outputDir := viper.GetString("outputDir")
+	dictionaryJson, _ := json.MarshalIndent(dictionary, "", " ")
+
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		fmt.Println("Error creating output directory:", err)
+		return
+	}
+
+	if err := os.WriteFile(filepath.Join(outputDir, fmt.Sprintf("%s_dictionary.json", filename)), dictionaryJson, 0644); err != nil {
 		fmt.Println("Error writing to file:", err)
 		return
 	}

@@ -42,7 +42,7 @@ var urlAddCmd = &cobra.Command{
 
 		// Split the args by spaces (in case the user entered multiple urls in one string)
 		var splitUrls []string = util.SplitURLInput(args)
-		var validUrls []string = util.RemoveDuplicates(util.ParseURLS(splitUrls))
+		var validUrls []string = util.RemoveDuplicateStringsFromArray(util.ValidateWikipediaURLS(splitUrls))
 		fmt.Printf("Trying to add %d URL(s) to extraction list...\n", len(splitUrls))
 
 		if !(len(validUrls) == len(splitUrls)) {
